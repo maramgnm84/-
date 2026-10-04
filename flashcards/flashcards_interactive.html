@@ -1,0 +1,115 @@
+<title>بطاقات أبي تمام</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: RTL study deck — topic chips, progress, one large flip card, controls */
+:root{--bg:#F4F4FB;--surface:#fff;--fg:#1E2A3A;--muted:#5B6578;--line:#D9DDEE;--t1:#4B3AA8;--t1s:#ECE6FF;--t2:#A86300;--t2s:#FFF1D0;--ok:#1F8A5B;--again:#C2412F;--font:'Cairo','Segoe UI',Tahoma,Arial,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#13162A;--surface:#1E2240;--fg:#EEF0FA;--muted:#A9B0C8;--line:#343A66;--t1:#A99BFF;--t1s:#2A2764;--t2:#F4B63F;--t2s:#3B2F12;--ok:#4CD39A;--again:#FF8A78;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#13162A;--surface:#1E2240;--fg:#EEF0FA;--muted:#A9B0C8;--line:#343A66;--t1:#A99BFF;--t1s:#2A2764;--t2:#F4B63F;--t2s:#3B2F12;--ok:#4CD39A;--again:#FF8A78;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);direction:rtl;margin:0;padding-inline:16px;padding-block:20px 28px;line-height:1.55}
+.wrap{max-width:720px;margin-inline:auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:clamp(24px,5vw,32px);font-weight:800;margin:0;line-height:1.25}
+.sub{color:var(--muted);font-weight:600;margin:2px 0 0;font-size:15px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:inherit;font-weight:700;font-size:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);padding:7px 14px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip:focus-visible,.btn:focus-visible,.card:focus-visible{outline:3px solid #F4B63F;outline-offset:2px}
+.prog{display:flex;justify-content:space-between;gap:10px;font-weight:700;font-size:14px;color:var(--muted);flex-wrap:wrap}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .25s}
+.scene{perspective:1200px}
+.card{position:relative;width:100%;min-height:330px;border:0;padding:0;background:none;font:inherit;color:inherit;cursor:pointer;transform-style:preserve-3d;transition:transform .5s;text-align:inherit}
+.card.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:20px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;border:2px solid var(--line);overflow:auto}
+.face .tp{align-self:flex-start;font-weight:700;font-size:13px;padding:2px 12px;border-radius:99px;color:#fff}
+.face .body{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:clamp(20px,4.6vw,26px);line-height:1.55;text-wrap:balance}
+.back{transform:rotateY(180deg);background:var(--surface)}
+.back .body{font-weight:600;font-size:clamp(16px,3.9vw,19px);text-align:right;justify-content:flex-start;align-items:center;white-space:pre-line}
+.src{font-size:12px;font-weight:700;color:var(--muted)}
+.hint{text-align:center;color:var(--muted);font-size:13px;font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{flex:1;min-width:110px;font:inherit;font-weight:700;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);padding:10px 14px;cursor:pointer}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.again{border-color:var(--again);color:var(--again)}
+.done{text-align:center;padding:30px 16px;border:2px dashed var(--line);border-radius:20px;font-weight:700}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+[hidden]{display:none!important}
+</style>
+<div class="wrap">
+  <div><h1>بطاقات أبي تمام</h1><p class="sub">«من تجارب الحياة» — 30 بطاقة في موضوعين</p></div>
+  <div class="chips" id="chips"></div>
+  <div class="prog"><span id="pos"></span><span id="known"></span></div>
+  <div class="bar"><i id="fill"></i></div>
+  <div class="scene" id="scene"><button class="card" id="card" aria-label="اقلبي البطاقة"><div class="face front" id="front"></div><div class="face back" id="back"></div></button></div>
+  <div class="hint">اضغطي على البطاقة أو مفتاح المسافة للقلب · الأسهم للتنقل</div>
+  <div class="row" id="ctl">
+    <button class="btn again" id="again">أحتاج مراجعة</button>
+    <button class="btn ok" id="got">عرفتها</button>
+  </div>
+  <div class="row">
+    <button class="btn" id="prev">‹ السابقة</button>
+    <button class="btn" id="next">التالية ›</button>
+    <button class="btn" id="shuf">خلط</button>
+    <button class="btn" id="reset">إعادة البدء</button>
+  </div>
+  <div class="done" id="done" hidden></div>
+</div>
+<script>
+(function(){
+  var ALL=[{"t": 1, "q": "ما شعر الحكمة؟", "a": "هو الشعر الذي ينقل تجارب الحياة وقيمها من خلال أبيات هي أشبه ما تكون بالحكم.", "s": "الملف"}, {"t": 1, "q": "اذكري ثلاث سمات لشعر الحكمة.", "a": "يعالج قضية محورية.\nويعتمد على التجربة والمشاهدة.\nويقدّم وثيقة لفضائل الأخلاق.", "s": "الملف"}, {"t": 1, "q": "على ماذا يبني الشاعر حكمته في قصيدة «من تجارب الحياة»؟", "a": "على ما عايش وسمع وقرأ، أي على التجربة الشخصية والمشاهدة.", "s": "الملف"}, {"t": 1, "q": "ما القضية المحورية في القصيدة؟", "a": "رحلة شعرية بين الفضائل التي يجب على المرء التحلي بها. وتتفرع منها فكر رئيسة تدعم هذه الفكرة المحورية.", "s": "الملف"}, {"t": 1, "q": "ما الأفكار الرئيسة التي تفرعت من الفكرة المحورية؟", "a": "• الإطار الأول: فيزياء الصحبة والأخلاق (البيتان 1-2).\n• الإطار الثاني: دورة المرونة والزمن (البيتان 3-4).\n• الإطار الثالث: هشاشة المكانة الاجتماعية (البيت 5).\n• الاستعارة الكبرى: تشريح الحياء (الأبيات 6-8).", "s": "الملف"}, {"t": 1, "q": "كيف تعبّر القصيدة عن «قانون العدوى» في الصحبة؟", "a": "في البيت: «إذا جاريت في خلقٍ دنيئًا فأنت ومن تجاريه سواءُ». فمخالطة سيئ الخلق تجعلك منهم، وهو المعنى نفسه في «المرء على دين خليله».", "s": "الملف"}, {"t": 1, "q": "ما «درع النبلاء» الذي يحمي الإنسان الحر؟", "a": "الوفاء. فهو يحميه من الأفعال المشينة والخيانة، كما في البيت: «رأيتُ الحرّ يجتنبُ المخازي ويحميه من الغدر الوفاءُ».", "s": "الملف"}, {"t": 1, "q": "ما الفكرة في الإطار الثاني «دورة المرونة والزمن»؟", "a": "الشدة يعقبها دائمًا الانفراج والرخاء، والعسر لا يستمر. والتجارب والعناء هي المحرك الذي يدفع الإنسان لتجاوز المحن.", "s": "الملف"}, {"t": 1, "q": "ما الفكرة في الإطار الثالث «هشاشة المكانة الاجتماعية»؟", "a": "الاحترام غالبًا يرتبط بالمكانة أو السلطة، فإذا زالت حلّ «الجفاء» (الكراهية والنفور) مكان الاحترام.", "s": "الملف"}, {"t": 1, "q": "ما ثنائية المفردات التي تعتمد عليها القصيدة؟", "a": "ثنائية الفضيلة والرذيلة:\n• الفضيلة: يَجتنب (يبتعد ويتحاشى المعاصي)، الوفاء (الإخلاص وحفظ العهود)، تخشى (تهاب وتخاف عاقبة الأمور).\n• الرذيلة: دنيئًا (خسيسًا وسيّئ الخلق)، المخازي (ما يبعث على العار والخزي)، الغدر (الخيانة ونقض العهد)، الجفاء (الغلظة والنفور).", "s": "الملف"}, {"t": 1, "q": "ما معنى «تكثيف التجربة»؟", "a": "تحويل الديناميكيات الاجتماعية المعقدة إلى معادلات شعرية دقيقة، مثل الشدة والرخاء.", "s": "الملف"}, {"t": 1, "q": "ما الأسلوب اللغوي في البيت: «ما من شدةٍ إلا سيأتي لها من بعد شدتها رخاءُ»؟", "a": "نفي واستثناء (ما ... إلا). وهو يفيد التوكيد والقطع بالحكم، فلا تخلو شدة من رخاء بعدها.", "s": "عام"}, {"t": 1, "q": "ما الأسلوب في البيت: «إذا لم تخش عاقبة الليالي ولم تستحِ فاصنع ما تشاءُ»؟", "a": "أسلوب شرط (إذا ... فـ ...). وجملة الجواب أمرٌ غير حقيقي يُفهم منه التحذير: من فقد الخشية والحياء لا يردعه شيء.", "s": "عام"}, {"t": 1, "q": "كيف عرّف الملف الشاعر؟", "a": "حبيب بن أوس بن الحارث الطائي (أبو تمام). وُلد في قرية جاسم بسوريا سنة 804 م، وتوفي في الموصل بالعراق سنة 846 م. شاعر عربي مسلم من العصر العباسي، خاض تجارب كثيرة وصاغها «حكمة خالدة».", "s": "الملف"}, {"t": 1, "q": "لماذا تُعد القصيدة نموذجًا لشعر الحكمة؟", "a": "لأنها جمعت الصفات الثلاث: قضية محورية، وتجربة ومشاهدة، وفضائل أخلاقية. وخلاصتها: «الحياء سر كل فضيلة، والتجربة هي المحرك».", "s": "الملف"}, {"t": 2, "q": "ما علم البديع؟", "a": "علمٌ تُعرف به وجوه تحسين الكلام، وهو قسمان: محسّنات معنوية (كالطباق والمقابلة) ومحسّنات لفظية (كالجناس والسجع).", "s": "عام"}, {"t": 2, "q": "ما مكانة أبي تمام في البديع؟", "a": "يُعدّ من أبرز شعراء المذهب البديعي في العصر العباسي، ويُعرف بإكثاره من الطباق والجناس والاستعارة.", "s": "عام"}, {"t": 2, "q": "ما الطباق؟ ومثاله من القصيدة؟", "a": "الجمع بين الكلمة وضدها.\nمثاله: الشدة × الرخاء، والغدر × الوفاء.", "s": "الملف"}, {"t": 2, "q": "ما فائدة الطباق في القصيدة؟", "a": "إبراز المعنى وتوضيحه بالمقارنة، أو «إثبات الفكرة بضدها»: الوفاء مقابل الغدر.", "s": "الملف"}, {"t": 2, "q": "ما أنواع الطباق؟", "a": "• طباق إيجاب: لفظان متضادان مثبتان، مثل «شدة/رخاء».\n• طباق سلب: فعل مثبت وفعل منفي من مادة واحدة، مثل «يعلمون/لا يعلمون».", "s": "عام"}, {"t": 2, "q": "ما الفرق بين الطباق والمقابلة؟", "a": "الطباق يكون بين لفظين متضادين فقط. أما المقابلة فتكون بذكر معنيين أو أكثر ثم ما يقابلها على الترتيب.", "s": "عام"}, {"t": 2, "q": "ما الكناية؟ ومثالها من القصيدة؟", "a": "لفظ يُراد به معنى غير ظاهر.\nمثالها «رأس أهل البيت» كناية عن المنصب أو المال أو الأب (المكانة). وفائدتها: التعبير عن المكانة بشكل غير مباشر وذكي.", "s": "الملف"}, {"t": 2, "q": "ما الصورة البلاغية في «ويبقى العود ما بقي اللحاءُ»؟", "a": "الملف يسميها «الاستعارة الكبرى: تشريح الحياء»: الحياء كلحاء الشجرة، والإنسان بلا حياء كعود بلا لحاء، «غصن ميت لا خير فيه». وهي براعة في استخدام الطبيعة لشرح البقاء الأخلاقي.\nتنبيه: بعض الكتب تسميها تشبيهًا (بليغًا أو تمثيليًا)، فاعتمدي تسمية كتابك المدرسي.", "s": "الملف + عام"}, {"t": 2, "q": "ما الجناس؟ وما مثاله عند أبي تمام؟", "a": "الجناس: تشابه لفظين في النطق واختلاف معناهما.\nمثاله: «السيفُ أصدقُ أنباءً من الكتبِ ... في حدّه الحدُّ بين الجدّ واللعبِ»؛ «حدّه» (حدّ السيف) و«الحدّ» (الفاصل) لفظ واحد بمعنيين. وفي البيت أيضًا طباق بين «الجدّ» و«اللعب».", "s": "عام"}, {"t": 2, "q": "ما التضمين الأدبي؟", "a": "أن يُدخل الأديب في كلامه شيئًا من كلام غيره، كبيت شعر أو مثل أو قول مأثور، ليدعم به فكرته أو يزيدها قوة.", "s": "عام"}, {"t": 2, "q": "ما الفرق بين التضمين والاقتباس؟", "a": "الاقتباس يكون من القرآن الكريم أو الحديث الشريف. أما التضمين فيكون من شعر الغير أو أمثاله وأقواله المشهورة.", "s": "عام"}, {"t": 2, "q": "ما فائدة التضمين؟", "a": "تقوية المعنى بنص مشهور، والإيجاز، وإظهار ثقافة الأديب. ويُشترط أن يتلاءم المضمَّن مع سياق الكلام.", "s": "عام"}, {"t": 2, "q": "هل في الأبيات الثمانية تضمين حرفي؟", "a": "لا يظهر في المقاطع المعروضة في الملف نص حرفي من كلام الغير. لكن معنى البيت الأول يلتقي مع القول المأثور «المرء على دين خليله»، وهو تقاطع في المعنى (تناص) وليس تضمينًا بالنص نفسه.", "s": "الملف + عام"}, {"t": 2, "q": "تنبيه: هل للتضمين معنى آخر؟", "a": "نعم، في النحو يعني تضمين فعل معنى فعل آخر (فيتعدّى بحرف الجر المناسب لمعنى الفعل الثاني). فانتبهي لمعناه في كل سياق.", "s": "عام"}, {"t": 2, "q": "لخّصي أسلوب أبي تمام البلاغي في القصيدة بثلاث نقاط.", "a": "1. تكثيف التجربة.\n2. قوة التضاد (الطباق).\n3. البراعة في الاستعارة.", "s": "الملف"}];
+  var TH={1:{n:'الخصائص الأسلوبية لشعر الحكمة',c:'var(--t1)',s:'var(--t1s)'},2:{n:'البديع والتضمين الأدبي',c:'var(--t2)',s:'var(--t2s)'}};
+  var $=function(i){return document.getElementById(i)};
+  var filter=0,deck=[],idx=0,known={};
+  ALL.forEach(function(c,i){c.id=i});
+  try{var k=JSON.parse(localStorage.getItem('abutammam-known')||'{}');if(k&&typeof k==='object')known=k}catch(e){}
+  function save(){try{localStorage.setItem('abutammam-known',JSON.stringify(known))}catch(e){}}
+  var chips=[[0,'الكل'],[1,'الخصائص الأسلوبية'],[2,'البديع والتضمين']];
+  chips.forEach(function(c){var b=document.createElement('button');b.className='chip';b.textContent=c[1];b.dataset.f=c[0];
+    b.addEventListener('click',function(){filter=c[0];build();});$('chips').appendChild(b)});
+  function build(){
+    deck=ALL.filter(function(c){return !filter||c.t===filter});idx=0;
+    Array.prototype.forEach.call($('chips').children,function(b){b.setAttribute('aria-pressed',String(+b.dataset.f===filter))});
+    render();
+  }
+  function flipBack(){$('card').classList.remove('flip')}
+  function render(){
+    var n=deck.length,kn=deck.filter(function(c){return known[c.id]}).length;
+    $('fill').style.width=(n?kn/n*100:0)+'%';
+    $('known').textContent='عرفتُ '+kn+' من '+n;
+    var fin=n>0&&kn===n;
+    $('scene').hidden=fin||!n;$('ctl').hidden=fin||!n;
+    $('done').hidden=!fin;
+    if(fin)$('done').textContent='أحسنتِ! أنهيتِ كل بطاقات هذا القسم. اضغطي «إعادة البدء» لتكرار المراجعة.';
+    if(!n||fin){$('pos').textContent='';return}
+    var c=deck[idx],th=TH[c.t];
+    $('pos').textContent='بطاقة '+(idx+1)+' من '+n+(known[c.id]?' ✓':'');
+    flipBack();
+    var f=$('front'),b=$('back');
+    f.style.background=th.s;f.style.borderColor=th.c;b.style.borderColor=th.c;
+    f.textContent='';b.textContent='';
+    var t1=document.createElement('span');t1.className='tp';t1.style.background=th.c;t1.style.color='var(--bg)';t1.textContent=th.n;
+    var q=document.createElement('div');q.className='body';q.textContent=c.q;f.appendChild(t1);f.appendChild(q);
+    var t2=t1.cloneNode(true);var a=document.createElement('div');a.className='body';a.textContent=c.a;
+    var s=document.createElement('div');s.className='src';s.textContent='المصدر: '+c.s;
+    b.appendChild(t2);b.appendChild(a);b.appendChild(s);
+    fit();
+  }
+  function fit(){var h=Math.max(330,Math.min(560,Math.max($('back').scrollHeight,$('front').scrollHeight)));$('card').style.minHeight=h+'px'}
+  function go(d){if(!deck.length)return;idx=(idx+d+deck.length)%deck.length;render()}
+  function nextUnknown(){
+    for(var i=1;i<=deck.length;i++){var j=(idx+i)%deck.length;if(!known[deck[j].id]){idx=j;return}}
+  }
+  $('card').addEventListener('click',function(){this.classList.toggle('flip')});
+  $('next').addEventListener('click',function(){go(1)});
+  $('prev').addEventListener('click',function(){go(-1)});
+  $('got').addEventListener('click',function(){known[deck[idx].id]=1;save();nextUnknown();render()});
+  $('again').addEventListener('click',function(){delete known[deck[idx].id];save();go(1)});
+  $('shuf').addEventListener('click',function(){for(var i=deck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=deck[i];deck[i]=deck[j];deck[j]=t}idx=0;render()});
+  $('reset').addEventListener('click',function(){deck.forEach(function(c){delete known[c.id]});save();idx=0;render()});
+  document.addEventListener('keydown',function(e){
+    if(e.key===' '||e.key==='Enter'){if(document.activeElement&&document.activeElement.tagName==='BUTTON')return;e.preventDefault();$('card').classList.toggle('flip')}
+    else if(e.key==='ArrowLeft')go(1);else if(e.key==='ArrowRight')go(-1);
+  });
+  build();
+})();
+</script>
