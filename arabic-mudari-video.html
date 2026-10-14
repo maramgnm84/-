@@ -1,0 +1,713 @@
+<title>من الضمّة إلى الفتحة</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* Layout: a fixed 1280x720 animated classroom canvas, scaled to fit a 16:9 frame; board on top, two students and one speech bubble below, controls under the frame. */
+:root{
+  --ink:#12304a; --blue:#1b6be0; --orange:#ee7d11; --turq:#11b5ad; --yellow:#ffcf3d; --navy:#0e2f57;
+  --bg:#eaf6f7; --fg:#12304a; --muted:#4d6a7d; --panel:#ffffff; --line:#c7dde3; --accent:#0f8f89; --accent-fg:#ffffff;
+  --font:'Cairo','Tahoma','Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0c1a22;--fg:#e4f2f5;--muted:#9bb6c1;--panel:#14272f;--line:#27424d;--accent:#2fd0c6;--accent-fg:#06222a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c1a22;--fg:#e4f2f5;--muted:#9bb6c1;--panel:#14272f;--line:#27424d;--accent:#2fd0c6;--accent-fg:#06222a;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);padding-block:18px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+*{box-sizing:border-box}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{margin:0;font-size:clamp(20px,3.4vw,30px);font-weight:900;text-wrap:balance;line-height:1.5}
+.lead{margin:0;color:var(--muted);font-size:15px;line-height:1.8;max-width:70ch}
+#player{display:flex;flex-direction:column;gap:10px;min-width:0}
+.frame{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:14px;background:#bdeef0;direction:ltr;box-shadow:0 8px 30px rgba(8,40,60,.28);cursor:pointer}
+#cv{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;direction:rtl;font-family:var(--font);color:var(--ink);user-select:none}
+#cv button{font-family:inherit}
+.bgs svg{position:absolute;inset:0;width:1280px;height:720px;transition:opacity .7s}
+#cv[data-bg="class"] .bg-lib{opacity:0}
+#cv[data-bg="lib"] .bg-class{opacity:0}
+/* board */
+.board{position:absolute;left:140px;top:48px;width:1000px;height:392px;border-radius:20px;background:#fafdff;border:14px solid #e3a92c;box-shadow:0 10px 0 #b9831a,0 18px 26px rgba(0,0,0,.2);z-index:2}
+.ledge{position:absolute;left:170px;top:446px;width:940px;height:14px;border-radius:8px;background:#c48e1e;z-index:1}
+.scene{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .6s ease;z-index:3}
+.scene.on{opacity:1;pointer-events:auto}
+.bd{position:absolute;left:154px;top:62px;width:972px;height:364px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px}
+b{font-weight:inherit}
+.r{color:var(--blue)} .n{color:var(--orange)}
+.tl{color:#fff;background:var(--orange);border-radius:14px;padding:0 .3em;font-weight:800}
+.chip{display:inline-flex;align-items:center;border-radius:16px;padding:2px 18px;background:#e7f7f6;border:3px solid var(--turq);font-weight:700;line-height:1.5}
+/* title */
+.s0 .ttl{font-size:84px;font-weight:900;line-height:1.5;text-align:center;animation:rise 1s both}
+.s0 .sub{font-size:58px;font-weight:800;color:var(--turq);animation:rise 1s .4s both}
+.s0 .tag{margin-top:10px;font-size:28px;font-weight:700;background:var(--yellow);padding:2px 22px;border-radius:18px;animation:rise 1s .8s both}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+/* scene 1 */
+.s1{gap:0}
+.s1 .row{display:flex;align-items:center;gap:22px;height:176px;padding-bottom:30px}
+.s1 .num{font-style:normal;width:54px;height:54px;border-radius:50%;background:var(--navy);color:#fff;font-size:30px;font-weight:800;display:grid;place-items:center;flex:none}
+.s1 .sent{font-size:58px;font-weight:800;line-height:1.7;display:flex;gap:22px;align-items:flex-end;opacity:0;transform:translateY(14px);transition:opacity .8s,transform .8s}
+.f-show .s1 .sent{opacity:1;transform:none}
+.w{display:inline-block;position:relative;transition:transform .6s,background .6s,color .6s,box-shadow .6s}
+.mk{position:absolute;top:100%;left:50%;transform:translateX(-50%) scale(.6);font-style:normal;font-size:28px;font-weight:800;white-space:nowrap;opacity:0;transition:opacity .6s,transform .6s;line-height:1.3}
+.f-big .s1 .v{transform:scale(1.2);transform-origin:50% 100%}
+.f-big .s1 .mk{opacity:1;transform:translateX(-50%) scale(1)}
+.f-an .s1 .an{color:#fff;background:var(--orange);border-radius:16px;padding:0 16px;box-shadow:0 0 0 7px rgba(255,207,61,.75),0 0 26px var(--yellow);transform:scale(1.12)}
+/* scene 2 */
+.s2{flex-direction:row;align-items:center;gap:22px;padding:0 4px}
+.s2 .colR{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.s2 .line1{display:flex;align-items:center;gap:18px}
+.s2 .book{width:96px;height:74px;flex:none}
+.s2 .pgl{transform-origin:50px 38px;transform:scaleX(0);transition:transform .9s ease .2s}
+.f-book .s2 .pgl{transform:scaleX(1)}
+.s2 .sentsm{font-size:54px;font-weight:800;line-height:1.5;opacity:0;transition:opacity .8s .6s}
+.f-book .s2 .sentsm{opacity:1}
+.s2 .def{font-size:30px;opacity:0;transform:translateX(24px);transition:.6s}
+.s2 .exs{display:flex;gap:14px;opacity:0;transform:translateX(24px);transition:.6s}
+.s2 .ex{font-size:42px;font-weight:800;background:#eaf2ff;border-color:var(--blue)}
+.s2 .cond{font-size:28px;opacity:0;transform:translateX(24px);transition:.6s}
+.f-def .s2 .def,.f-ex .s2 .exs,.f-cond .s2 .cond{opacity:1;transform:none}
+.s2 .colL{width:340px;flex:none}
+.s2 .card3{background:#fff;border:5px solid var(--blue);border-radius:24px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;align-items:center;opacity:0;transform:translateX(-34px);transition:.7s}
+.f-card .s2 .card3{opacity:1;transform:none}
+.s2 .ct{font-size:34px;font-weight:900;color:var(--blue);text-align:center;line-height:1.4}
+.s2 .sign{display:flex;align-items:center;gap:14px}
+.s2 .big{width:104px;height:104px;border-radius:50%;background:#eaf2ff;border:5px solid var(--blue);display:grid;place-items:center;font-size:86px;font-weight:900;line-height:1.4;padding-top:6px}
+.s2 .lbl{font-size:26px;font-weight:700;line-height:1.5}
+.s2 .why{font-size:26px;background:#fff6d4;border-color:var(--yellow);opacity:0;transform:scale(.8);transition:.6s}
+.f-why .s2 .why{opacity:1;transform:none}
+/* scene 3 */
+.s3{gap:14px}
+.s3 .sent{font-size:56px;font-weight:800;line-height:1.6;display:flex;gap:20px;align-items:center}
+.s3 .tool{background:var(--orange);color:#fff;border-radius:16px;padding:0 18px;box-shadow:0 5px 0 #b95a00;opacity:0}
+.f-an .s3 .tool{animation:drop .9s both}
+@keyframes drop{0%{opacity:0;transform:translateY(-120px) rotate(-8deg)}70%{opacity:1;transform:translateY(8px)}100%{opacity:1;transform:none}}
+.s3 .vv{display:inline-grid}
+.s3 .vv>span{grid-area:1/1;transition:opacity .7s,transform .7s}
+.s3 .vn{opacity:0;transform:translateY(14px) scale(.8)}
+.f-nasb .s3 .vr{opacity:0;transform:translateY(-14px) scale(.8)}
+.f-nasb .s3 .vn{opacity:1;transform:none}
+.s3 .low{display:flex;gap:22px;align-items:center;justify-content:center;width:100%;height:200px}
+.s3 .morph{display:flex;align-items:center;gap:12px;opacity:0;transform:scale(.85);transition:.7s}
+.f-morph .s3 .morph{opacity:1;transform:none}
+.s3 .gl{width:150px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.s3 .gl span{width:110px;height:110px;border-radius:50%;display:grid;place-items:center;font-size:90px;font-weight:900;line-height:1.4;padding-top:8px;border:5px solid}
+.s3 .g1 span{border-color:var(--blue);background:#eaf2ff}
+.s3 .g2 span{border-color:var(--orange);background:#fff1de}
+.f-morph .s3 .g2 span{animation:pop .9s .5s both}
+@keyframes pop{0%{transform:scale(.2) rotate(-90deg);opacity:0}70%{transform:scale(1.15)}100%{transform:none;opacity:1}}
+.s3 .gl small{font-size:22px;font-weight:700}
+.s3 .arr{font-size:60px;font-weight:900;color:var(--navy)}
+.s3 .i3{width:540px;background:#fff;border:5px solid var(--navy);border-radius:22px;padding:12px 16px;display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateX(-30px);transition:.7s}
+.f-i3 .s3 .i3{opacity:1;transform:none}
+.s3 .ir{display:flex;align-items:center;gap:14px;font-size:27px;font-weight:700;line-height:1.5}
+.s3 .pill{font-size:38px;font-weight:900;background:#fff1de;border:3px solid var(--orange);border-radius:14px;padding:0 14px;flex:none}
+.s3 .pill.t{background:var(--orange);color:#fff;border-color:var(--orange)}
+/* scene 4 */
+.s4 .cards{display:flex;gap:16px;width:100%;justify-content:center}
+.s4 .tc{width:222px;height:326px;background:#fff;border:5px solid var(--navy);border-radius:22px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0;transform:translateY(40px);transition:opacity .6s,transform .6s,box-shadow .6s,border-color .6s}
+.f-cards .s4 .tc{opacity:1;transform:none}
+.f-cards .s4 .tc:nth-child(2){transition-delay:.15s}.f-cards .s4 .tc:nth-child(3){transition-delay:.3s}.f-cards .s4 .tc:nth-child(4){transition-delay:.45s}
+.s4 .th{width:100%;text-align:center;font-size:58px;font-weight:900;line-height:1.35;border-radius:16px;background:#fff1de;color:var(--orange)}
+.s4 .c-l .th{font-size:38px;background:#fff6d4;color:var(--navy);padding:8px 0}
+.f-lit .s4 .tc{border-color:var(--orange);box-shadow:0 0 0 5px rgba(255,207,61,.7)}
+.f-lit .s4 .c-l{border-color:var(--yellow)}
+.s4 .ex{min-height:112px;font-size:36px;font-weight:800;line-height:1.6;text-align:center;display:block;padding-top:14px;opacity:0;transform:scale(.9);transition:.6s}
+.s4 .c-an .ex,.f-e2 .s4 .c-n .ex,.f-e3 .s4 .c-k .ex,.f-e4 .s4 .c-l .ex{opacity:1;transform:none}
+.s4 .nt{font-size:25px;font-weight:700;line-height:1.5;text-align:center;color:var(--muted);opacity:0;transition:.6s;min-height:40px}
+.s4 .c-an .nt,.f-n2 .s4 .c-n .nt,.f-n3 .s4 .c-k .nt,.f-n4 .s4 .c-l .nt{opacity:1;color:var(--ink)}
+.s4 .gp{display:inline-block;font-size:28px;font-weight:900;color:var(--orange);border:3px dashed var(--orange);border-radius:12px;padding:0 12px;margin-inline-start:8px}
+/* scene 5 */
+.s5 .trio{display:flex;gap:16px;width:100%;justify-content:center}
+.s5 .cmp{width:306px;height:346px;background:#fff;border:5px solid var(--navy);border-radius:22px;padding:10px 12px;display:flex;flex-direction:column;align-items:center;gap:2px;opacity:0;transform:translateY(34px);transition:opacity .6s,transform .6s,box-shadow .6s}
+.f-c .s5 .cmp{opacity:1;transform:none}
+.f-c .s5 .k2{transition-delay:.15s}.f-c .s5 .k3{transition-delay:.3s}
+.f-r3 .s5 .k3,.f-m2 .s5 .k2{box-shadow:0 0 0 6px rgba(255,207,61,.8)}
+.s5 .rw{display:flex;flex-direction:column;align-items:center;gap:0;width:100%}
+.s5 .tg{font-style:normal;font-size:22px;font-weight:800;color:#fff;border-radius:12px;padding:0 14px}
+.s5 .tg.r{background:var(--blue)} .s5 .tg.n{background:var(--orange)}
+.s5 .wd{font-size:36px;font-weight:800;line-height:1.55;text-align:center}
+.s5 .k3 .wd{font-size:31px}
+.s5 .sn{font-size:23px;font-weight:700;line-height:1.4;text-align:center}
+.s5 .dn{font-size:38px;font-weight:900;color:var(--navy);line-height:1.1}
+.s5 .rn,.s5 .dn{opacity:0;transform:translateY(10px);transition:.6s}
+.f-n1 .s5 .k1 .rn,.f-n1 .s5 .k1 .dn,.f-n2 .s5 .k2 .rn,.f-n2 .s5 .k2 .dn,.f-n3 .s5 .k3 .rn,.f-n3 .s5 .k3 .dn{opacity:1;transform:none}
+.s5 .gst{display:inline-block;font-size:28px;font-weight:900;color:var(--orange);border:3px dashed var(--orange);border-radius:12px;padding:0 10px;margin-inline-start:6px;opacity:.75}
+.f-m2 .s5 .gst{opacity:1;background:#fff1de}
+.s5 .k2 .sn.n{opacity:.0;transition:.6s}
+.f-m2 .s5 .k2 .sn.n{opacity:1}
+.s5 .k3 .rr .sn,.s5 .k3 .rn .sn{transition:.6s}
+.s5 .k3 .rr .sn{opacity:0}
+.f-r3n .s5 .k3 .rr .sn{opacity:1}
+.f-r3n .s5 .nun{background:rgba(27,107,224,.2);border-radius:8px;box-shadow:0 0 0 3px var(--blue)}
+.s5 .gone{display:inline-block;color:var(--orange);text-decoration:line-through;max-width:1.2em;overflow:hidden;vertical-align:bottom;font-weight:800}
+.f-n3 .s5 .gone{animation:vanish 1.3s 1.1s forwards}
+@keyframes vanish{to{opacity:0;max-width:0}}
+.s5 .k3 .rn .sn{opacity:0}
+.f-n3 .s5 .k3 .rn .sn{opacity:1;transition-delay:1.9s}
+/* scene 6 */
+.s6{display:block}
+.qp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0;pointer-events:none;transition:opacity .5s}
+.f-q1 .qp1,.f-q2 .qp2,.f-q3 .qp3{opacity:1;pointer-events:auto}
+.qh{font-size:26px;font-weight:800;background:var(--navy);color:#fff;border-radius:16px;padding:0 20px}
+.qt{font-size:50px;font-weight:800;line-height:1.5;text-align:center}
+.qt .tgt{background:#fff6d4;border-radius:14px;padding:0 14px}
+.opts{display:flex;gap:26px}
+.opt{font-size:44px;font-weight:800;line-height:1.5;padding:4px 28px;border-radius:22px;border:5px solid var(--navy);background:#fff;color:var(--ink);cursor:pointer;transition:transform .25s,background .3s,opacity .3s,border-color .3s}
+.opt:hover{transform:translateY(-4px)}
+.opt:focus-visible{outline:5px solid var(--yellow);outline-offset:3px}
+.opt.bad{background:#fde3e3;border-color:#c9503a;animation:shake .4s}
+@keyframes shake{25%{transform:translateX(8px)}75%{transform:translateX(-8px)}}
+.f-ans .opt[data-ok="1"]{background:var(--turq);border-color:#0b7f7a;color:#fff;transform:scale(1.07)}
+.f-ans .opt[data-ok="1"]::after{content:" ✓"}
+.f-ans .opt[data-ok="0"]{opacity:.38}
+.fb{height:44px;font-size:30px;font-weight:800;position:relative;width:100%;text-align:center}
+.fb span{position:absolute;inset:0;opacity:0;transition:.3s}
+.got .fok{opacity:1;color:#0b7f7a}.miss .fno{opacity:1;color:#c9503a}
+.f-ans .fb span{opacity:0!important}
+.expl{height:40px;font-size:28px;font-weight:700;color:var(--ink);opacity:0;transition:.6s}
+.f-ans .expl{opacity:1}
+.star{position:absolute;right:46px;top:34px;width:92px;height:92px;opacity:0;transform:scale(.2) rotate(-60deg)}
+.f-ans .star,.got .star{animation:starpop .9s forwards}
+@keyframes starpop{60%{transform:scale(1.25) rotate(8deg);opacity:1}100%{opacity:1;transform:none}}
+.cdr{position:absolute;left:30px;top:20px;width:104px;height:104px;opacity:0;transition:opacity .3s}
+.f-cd .cdr{opacity:1}
+.cdr svg{width:104px;height:104px;transform:rotate(-90deg)}
+.cdr circle{fill:#fff;stroke-width:9}
+.cdr .trk{stroke:#d6e7ea}.cdr .prg{stroke:var(--orange);stroke-linecap:round;fill:none}
+.cdn{position:absolute;inset:0;display:grid;place-items:center;font-size:58px;font-weight:900;color:var(--navy);padding-top:6px}
+/* scene 7 */
+.s7{display:block}
+.s7 svg.lines{position:absolute;inset:0;width:972px;height:364px}
+.s7 svg.lines path{fill:none;stroke-width:5;stroke-linecap:round;stroke-dasharray:420;stroke-dashoffset:420;transition:stroke-dashoffset 1s}
+.s7 .nd{position:absolute;transform:translateX(-50%) scale(.85);text-align:center;font-weight:800;line-height:1.45;border-radius:18px;opacity:0;transition:opacity .7s,transform .7s;display:grid;place-items:center}
+.s7 .root{left:486px;top:6px;width:360px;height:70px;font-size:42px;background:var(--navy);color:#fff}
+.s7 .br{top:124px;width:250px;height:64px;font-size:38px;color:#fff}
+.s7 .br.r{background:var(--blue);left:736px}
+.s7 .br.n{background:var(--orange);left:236px}
+.s7 .lf{top:242px;width:224px;height:104px;font-size:26px;background:#fff;border:5px solid;padding:4px 8px}
+.s7 .lf.r{border-color:var(--blue);color:var(--ink)}.s7 .lf.n{border-color:var(--orange);color:var(--ink)}
+.s7 .l1{left:846px}.s7 .l2{left:626px}.s7 .l3{left:346px}.s7 .l4{left:126px}
+.f-root .s7 .root,.f-rafa .s7 .br.r,.f-rafa .s7 .lf.r,.f-nasb .s7 .br.n,.f-nasb .s7 .lf.n{opacity:1;transform:translateX(-50%)}
+.f-rafa .s7 .p-r,.f-nasb .s7 .p-n{stroke-dashoffset:0}
+/* characters */
+.cw{position:absolute;bottom:0;width:176px;height:316px;z-index:4;transform:scale(var(--s,1));transform-origin:50% 100%;transition:transform .4s,filter .4s;filter:saturate(.88) brightness(.97)}
+.cw.active{--s:1.05;filter:drop-shadow(0 0 14px rgba(255,207,61,.95))}
+#cv[data-scene="6"] .cw{--s:1.1}
+#cv[data-scene="6"] .cw.active{--s:1.17}
+#ahmed{left:1062px}#salem{left:42px}
+.cw svg{width:100%;height:100%;overflow:visible;animation:bob 3.4s ease-in-out infinite alternate}
+#salem svg{animation-delay:-1.4s}
+@keyframes bob{to{transform:translateY(-4px)}}
+.eyes{transform-origin:100px 72px;animation:blink 4.6s infinite}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.08)}}
+.m-o{transform-origin:100px 94px;transform:scaleY(0)}
+.talk .m-o{animation:talk .7s linear infinite}
+@keyframes talk{0%{transform:scaleY(.2)}20%{transform:scaleY(1)}40%{transform:scaleY(.4)}65%{transform:scaleY(.95)}100%{transform:scaleY(.25)}}
+.arm{transition:transform .4s}
+.arm-r{transform-origin:150px 138px}
+.talk .arm-r,.gesture .arm-r{animation:gest 1.5s ease-in-out infinite}
+@keyframes gest{0%,100%{transform:rotate(-6deg)}35%{transform:rotate(-62deg)}65%{transform:rotate(-40deg)}}
+.plate{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);font-size:22px;font-weight:800;color:#fff;border-radius:12px;padding:0 16px;line-height:1.5}
+#ahmed .plate{background:var(--blue)}#salem .plate{background:#2c9a5a}
+/* bubble */
+.bub{position:absolute;left:320px;top:462px;width:640px;height:208px;z-index:5;background:#fff;border:5px solid var(--navy);border-radius:28px;display:flex;align-items:center;justify-content:center;padding:26px 32px 12px;text-align:center;font-weight:700;line-height:1.75;transition:opacity .35s,transform .35s;box-shadow:0 8px 0 rgba(14,47,87,.25)}
+.bub.off{opacity:0;transform:translateY(10px);pointer-events:none}
+.bub .who{position:absolute;top:-17px;font-size:24px;font-weight:800;color:#fff;border-radius:14px;padding:0 18px;line-height:1.5}
+.bub.by-a .who{right:26px;background:var(--blue)} .bub.by-s .who{left:26px;background:#2c9a5a}
+.bub::after{content:"";position:absolute;top:58px;width:26px;height:26px;background:#fff;transform:rotate(45deg)}
+.bub.by-a::after{right:-16px;border-top:5px solid var(--navy);border-right:5px solid var(--navy)}
+.bub.by-s::after{left:-16px;border-bottom:5px solid var(--navy);border-left:5px solid var(--navy)}
+.bub .txt{font-size:33px}.bub .txt.sm{font-size:28px}
+/* overlay */
+.ov{position:absolute;inset:0;z-index:10;background:rgba(14,47,87,.62);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#fff;text-align:center;transition:opacity .4s}
+.ov[hidden]{display:none}
+.ov h2{margin:0;font-size:52px;font-weight:900}
+.ov p{margin:0;font-size:26px;font-weight:600}
+.ov button{font-size:40px;font-weight:900;border:none;border-radius:60px;padding:10px 54px;background:var(--yellow);color:var(--navy);cursor:pointer;box-shadow:0 8px 0 #c79a12}
+.ov button:focus-visible{outline:5px solid #fff;outline-offset:4px}
+/* controls */
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;direction:rtl}
+.cb{display:inline-flex;align-items:center;gap:7px;font:700 15px var(--font);color:var(--fg);background:transparent;border:1.5px solid var(--line);border-radius:10px;padding:7px 14px;cursor:pointer;min-height:40px}
+.cb svg{width:18px;height:18px;fill:currentColor}
+.cb:hover{border-color:var(--accent)}
+.cb.main{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.cb[aria-pressed="false"]{opacity:.65}
+.cb:disabled{opacity:.45;cursor:not-allowed}
+.cb:focus-visible,.track:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.prog{flex:1 1 220px;min-width:160px;display:flex;align-items:center;gap:10px}
+.track{position:relative;flex:1;height:14px;border-radius:8px;background:var(--line);cursor:pointer;direction:rtl}
+.fill{position:absolute;right:0;top:0;bottom:0;border-radius:8px;background:var(--accent);width:0}
+.tick{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--panel);border-radius:2px;opacity:.9}
+.time{font-variant-numeric:tabular-nums;font-size:14px;color:var(--muted);direction:ltr;white-space:nowrap}
+.note{margin:0;color:var(--muted);font-size:14px;line-height:1.8}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+#player:fullscreen{background:#04121a;justify-content:center;align-items:center;padding:0;gap:8px}
+#player:fullscreen .frame{width:min(100vw,calc((100vh - 70px) * 16 / 9));border-radius:0}
+#player:fullscreen .ctrl{width:min(100vw,calc((100vh - 70px) * 16 / 9))}
+@media (prefers-reduced-motion:reduce){
+  .cw svg,.eyes,.talk .arm-r,.gesture .arm-r,.talk .m-o{animation:none}
+  .scene,.w,.mk{transition-duration:.01s}
+}
+</style>
+
+<main class="wrap" dir="rtl" lang="ar">
+  <header>
+    <h1>من الضمّة إلى الفتحة: رحلة الفعل المضارع</h1>
+    <p class="lead">فيديو تعليمي متحرك يدور بين أحمد وسالم، عن الفعل المضارع المرفوع وكيف يصير منصوبًا. اضغط «تشغيل» للبدء.</p>
+  </header>
+
+  <section id="player" aria-label="مشغّل الفيديو التعليمي">
+    <div class="frame" id="frame">
+      <div id="cv" data-scene="0" data-bg="class">
+        <div class="bgs" id="bgs"></div>
+        <div class="board"></div><div class="ledge"></div>
+
+        <!-- 0: العنوان -->
+        <div class="scene" data-s="0"><div class="bd s0">
+          <div class="ttl">من <b class="r">الضمّة</b> إلى <b class="n">الفتحة</b></div>
+          <div class="sub">رحلة الفعل المضارع</div>
+          <div class="tag">حوار تعليمي بين أحمد وسالم</div>
+        </div></div>
+
+        <!-- 1: لغز على السبورة -->
+        <div class="scene" data-s="1"><div class="bd s1">
+          <div class="row"><i class="num">١</i><div class="sent">
+            <span class="w v">يقر<b class="r">أُ</b><em class="mk r">ضمّة ـُ</em></span>
+            <span class="w">أحمدُ</span> <span class="w">كتابًا</span></div></div>
+          <div class="row"><i class="num">٢</i><div class="sent">
+            <span class="w">يريدُ</span> <span class="w">أحمدُ</span> <span class="w an">أن</span>
+            <span class="w v">يقر<b class="n">أَ</b><em class="mk n">فتحة ـَ</em></span>
+            <span class="w">كتابًا</span></div></div>
+        </div></div>
+
+        <!-- 2: المضارع المرفوع -->
+        <div class="scene" data-s="2"><div class="bd s2">
+          <div class="colR">
+            <div class="line1">
+              <svg class="book" viewBox="0 0 100 76" aria-hidden="true">
+                <path d="M2 6 Q26 -2 50 8 Q74 -2 98 6 V70 Q74 62 50 72 Q26 62 2 70Z" fill="#1f5fc4"/>
+                <path d="M50 12 Q74 3 94 10 V64 Q74 57 50 67Z" fill="#fff"/>
+                <path d="M60 24 Q74 19 86 23 M60 36 Q74 31 86 35 M60 48 Q74 43 86 47" stroke="#9db8d6" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <g class="pgl"><path d="M50 12 Q26 3 6 10 V64 Q26 57 50 67Z" fill="#fff"/>
+                <path d="M14 24 Q26 19 40 23 M14 36 Q26 31 40 35 M14 48 Q26 43 40 47" stroke="#9db8d6" stroke-width="3" fill="none" stroke-linecap="round"/></g>
+              </svg>
+              <div class="sentsm">يقر<b class="r">أُ</b> أحمدُ كتابًا</div>
+            </div>
+            <div class="chip def">المضارع: حدث في الحاضر أو المستقبل</div>
+            <div class="exs"><span class="chip ex">يقر<b class="r">أُ</b></span><span class="chip ex">يكت<b class="r">بُ</b></span><span class="chip ex">يتعلّ<b class="r">مُ</b></span></div>
+            <div class="chip cond">قبله: لا أداة نصب ولا جزم</div>
+          </div>
+          <div class="colL"><div class="card3">
+            <div class="ct">فعل مضارع مرفوع</div>
+            <div class="sign"><span class="big r">ـُ</span><span class="lbl">علامة رفعه:<br>الضمّة الظاهرة</span></div>
+            <div class="chip why">صحيح الآخر</div>
+          </div></div>
+        </div></div>
+
+        <!-- 3: التحوّل إلى النصب -->
+        <div class="scene" data-s="3"><div class="bd s3">
+          <div class="sent"><span class="w">يريدُ</span> <span class="w">أحمدُ</span> <span class="w tool">أن</span>
+            <span class="w vv"><span class="vr">يقر<b class="r">أُ</b></span><span class="vn">يقر<b class="n">أَ</b></span></span>
+            <span class="w">كتابًا</span></div>
+          <div class="low">
+            <div class="morph">
+              <div class="gl g1"><span class="r">ـُ</span><small>ضمّة · مرفوع</small></div>
+              <div class="arr">←</div>
+              <div class="gl g2"><span class="n">ـَ</span><small>فتحة · منصوب</small></div>
+            </div>
+            <div class="i3">
+              <div class="ir"><span class="pill t">أن</span><span>أداة نصب</span></div>
+              <div class="ir"><span class="pill">يقر<b class="n">أَ</b></span><span>فعل مضارع منصوب، وعلامة نصبه الفتحة الظاهرة</span></div>
+            </div>
+          </div>
+        </div></div>
+
+        <!-- 4: أدوات النصب -->
+        <div class="scene" data-s="4"><div class="bd s4"><div class="cards">
+          <div class="tc c-an"><div class="th">أن</div><div class="ex">أن يقر<b class="n">أَ</b></div><div class="nt">أداة نصب</div></div>
+          <div class="tc c-n"><div class="th">لن</div><div class="ex"><span class="tl">لن</span> أهم<b class="n">لَ</b> واجبي</div><div class="nt">نفي حدوث الفعل في المستقبل</div></div>
+          <div class="tc c-k"><div class="th">كي</div><div class="ex">أجته<b class="r">دُ</b> <span class="tl">كي</span> أنج<b class="n">حَ</b></div><div class="nt">تدلّ على التعليل</div></div>
+          <div class="tc c-l"><div class="th">لام التعليل</div><div class="ex">أقر<b class="r">أُ</b> لأتعلّ<b class="n">مَ</b></div><div class="nt gh">منصوب بـ <span class="gp">أن</span> مضمرة</div></div>
+        </div></div></div>
+
+        <!-- 5: علامات النصب -->
+        <div class="scene" data-s="5"><div class="bd s5"><div class="trio">
+          <div class="cmp k1">
+            <div class="rw rr"><i class="tg r">مرفوع</i><div class="wd">أكت<b class="r">بُ</b></div><div class="sn r">الضمّة الظاهرة</div></div>
+            <div class="dn">↓</div>
+            <div class="rw rn"><i class="tg n">منصوب</i><div class="wd"><span class="tl">لن</span> أكت<b class="n">بَ</b></div><div class="sn n">الفتحة الظاهرة</div></div>
+          </div>
+          <div class="cmp k2">
+            <div class="rw rr"><i class="tg r">مرفوع</i><div class="wd">أسعى</div><div class="sn r">الضمّة المقدّرة على الألف</div></div>
+            <div class="dn">↓</div>
+            <div class="rw rn"><i class="tg n">منصوب</i><div class="wd"><span class="tl">لن</span> أسعى<span class="gst">ـَ مقدّرة</span></div><div class="sn n">الفتحة مقدّرة فلا تظهر</div></div>
+          </div>
+          <div class="cmp k3">
+            <div class="rw rr"><i class="tg r">مرفوع</i><div class="wd">الطالبان يكتبا<b class="r nun">نِ</b></div><div class="sn r">ثبوت النون</div></div>
+            <div class="dn">↓</div>
+            <div class="rw rn"><i class="tg n">منصوب</i><div class="wd">الطالبان <span class="tl">لن</span> يكتبا<span class="gone">نِ</span></div><div class="sn n">حذف النون</div></div>
+          </div>
+        </div></div></div>
+
+        <!-- 6: تحدّي المشاهد -->
+        <div class="scene" data-s="6"><div class="bd s6">
+          <div class="cdr" id="cdr"><svg viewBox="0 0 104 104" aria-hidden="true"><circle class="trk" cx="52" cy="52" r="44"/><circle class="prg" id="cdp" cx="52" cy="52" r="44" stroke-dasharray="276.5" stroke-dashoffset="0"/></svg><div class="cdn" id="cdn">3</div></div>
+          <div class="qp qp1">
+            <div class="qh">التحدّي ١ من ٣</div>
+            <div class="qt">أدخل <span class="tl">لن</span> على: <span class="tgt">أهملُ واجبي</span></div>
+            <div class="opts"><button class="opt" data-ok="0">لن أهملُ واجبي</button><button class="opt" data-ok="1">لن أهملَ واجبي</button></div>
+            <div class="fb"><span class="fok">أحسنت! إجابة صحيحة</span><span class="fno">ليست هذه. انتظر الإجابة بعد العدّ</span></div>
+            <div class="expl">بعد «لن» نقول: أهملَ بالفتحة الظاهرة</div>
+            <svg class="star" viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,6 62,36 94,38 69,58 78,90 50,72 22,90 31,58 6,38 38,36" fill="#ffcf3d" stroke="#e0a000" stroke-width="5" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="qp qp2">
+            <div class="qh">التحدّي ٢ من ٣</div>
+            <div class="qt">اختر الفعل الصحيح: <span class="tgt">أدرسُ <span class="tl">كي</span> …</span></div>
+            <div class="opts"><button class="opt" data-ok="0">أنجحُ</button><button class="opt" data-ok="1">أنجحَ</button></div>
+            <div class="fb"><span class="fok">أحسنت! إجابة صحيحة</span><span class="fno">ليست هذه. انتظر الإجابة بعد العدّ</span></div>
+            <div class="expl">بعد «كي» يُنصب الفعل: أنجحَ</div>
+            <svg class="star" viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,6 62,36 94,38 69,58 78,90 50,72 22,90 31,58 6,38 38,36" fill="#ffcf3d" stroke="#e0a000" stroke-width="5" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="qp qp3">
+            <div class="qh">التحدّي ٣ من ٣</div>
+            <div class="qt">أدخل <span class="tl">لن</span> على: <span class="tgt">الطالبان يتأخّرانِ</span></div>
+            <div class="opts"><button class="opt" data-ok="1">الطالبان لن يتأخّرا</button><button class="opt" data-ok="0">الطالبان لن يتأخّرانِ</button></div>
+            <div class="fb"><span class="fok">أحسنت! إجابة صحيحة</span><span class="fno">ليست هذه. انتظر الإجابة بعد العدّ</span></div>
+            <div class="expl">علامة النصب: حذف النون</div>
+            <svg class="star" viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,6 62,36 94,38 69,58 78,90 50,72 22,90 31,58 6,38 38,36" fill="#ffcf3d" stroke="#e0a000" stroke-width="5" stroke-linejoin="round"/></svg>
+          </div>
+        </div></div>
+
+        <!-- 7: الخلاصة -->
+        <div class="scene" data-s="7"><div class="bd s7">
+          <svg class="lines" viewBox="0 0 972 364" aria-hidden="true">
+            <path class="p-r" d="M486 76 C486 100 736 100 736 124" stroke="#1b6be0"/>
+            <path class="p-n" d="M486 76 C486 100 236 100 236 124" stroke="#ee7d11"/>
+            <path class="p-r" d="M736 188 C736 215 846 215 846 242" stroke="#1b6be0"/>
+            <path class="p-r" d="M736 188 C736 215 626 215 626 242" stroke="#1b6be0"/>
+            <path class="p-n" d="M236 188 C236 215 346 215 346 242" stroke="#ee7d11"/>
+            <path class="p-n" d="M236 188 C236 215 126 215 126 242" stroke="#ee7d11"/>
+          </svg>
+          <div class="nd root">الفعل المضارع</div>
+          <div class="nd br r">المرفوع</div><div class="nd br n">المنصوب</div>
+          <div class="nd lf r l1">الضمّة الظاهرة أو المقدّرة</div>
+          <div class="nd lf r l2">ثبوت النون في الأفعال الخمسة</div>
+          <div class="nd lf n l3">الفتحة الظاهرة أو المقدّرة</div>
+          <div class="nd lf n l4">حذف النون في الأفعال الخمسة</div>
+        </div></div>
+
+        <div class="cw" id="ahmed"></div>
+        <div class="cw" id="salem"></div>
+        <div class="bub off by-a" id="bub"><span class="who" id="who">أحمد</span><div class="txt" id="txt"></div></div>
+
+        <div class="ov" id="ov">
+          <h2 id="ovh">من الضمّة إلى الفتحة</h2>
+          <p id="ovp">مدة العرض نحو ثلاث دقائق ونصف</p>
+          <button id="ovb" type="button">تشغيل</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sr" aria-live="polite" id="sr"></div>
+
+    <div class="ctrl">
+      <button class="cb main" id="bPlay" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="icoPlay" d="M7 4l13 8-13 8z"/></svg><span id="lPlay">تشغيل</span></button>
+      <button class="cb" id="bRe" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6.5 12 11V8a5 5 0 11-5 5H5a7 7 0 107-8z"/></svg>إعادة</button>
+      <div class="prog">
+        <span class="time" id="tNow">0:00</span>
+        <div class="track" id="track" role="slider" tabindex="0" aria-label="موضع التشغيل" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill" id="fill"></div></div>
+        <span class="time" id="tTot">0:00</span>
+      </div>
+      <button class="cb" id="bVoice" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9zm13.5 3a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4z"/></svg><span id="lVoice">الصوت</span></button>
+      <button class="cb" id="bFs" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>ملء الشاشة</button>
+    </div>
+    <p class="note" id="voiceNote"></p>
+    <p class="note">للحصول على فيديو: افتح ملء الشاشة وشغّل مسجّل الشاشة في جهازك ثم اضغط «تشغيل». المسافة تشغّل وتوقف. في مرحلة «تحدّي المشاهد» يمكنك النقر على الإجابات.</p>
+  </section>
+</main>
+
+<script>
+(function(){
+'use strict';
+/* ---------- characters ---------- */
+function charSVG(id){
+  var A=id==='ahmed', skin=A?'#f2c29b':'#e4a97c', hair=A?'#17171f':'#7b4a26';
+  var s='<svg viewBox="0 0 200 340" aria-hidden="true">';
+  if(A) s+='<rect x="36" y="120" width="128" height="118" rx="24" fill="#1f5fc4"/><rect x="36" y="192" width="128" height="46" rx="14" fill="#2b76e8"/>';
+  s+='<rect x="64" y="236" width="30" height="84" rx="8" fill="#1d3b6e"/><rect x="106" y="236" width="30" height="84" rx="8" fill="#1d3b6e"/>'
+   +'<ellipse cx="77" cy="324" rx="25" ry="12" fill="#22303f"/><ellipse cx="123" cy="324" rx="25" ry="12" fill="#22303f"/>'
+   +'<rect x="90" y="104" width="20" height="26" rx="8" fill="'+skin+'"/>'
+   +'<path d="M52 142 Q52 126 70 124 L130 124 Q148 126 148 142 L148 246 L52 246Z" fill="#fff" stroke="#c5d3de" stroke-width="2"/>'
+   +'<rect x="54" y="228" width="92" height="26" rx="7" fill="#1d3b6e"/><rect x="94" y="232" width="12" height="8" rx="2" fill="#ffcf3d"/>'
+   +'<path d="M84 124 L100 146 L92 126Z M116 124 L100 146 L108 126Z" fill="#fff" stroke="#c5d3de" stroke-width="2"/>'
+   +'<path d="M100 140 L108 152 L104 204 L100 212 L96 204 L92 152Z" fill="#11b5ad"/>'
+   +'<circle cx="126" cy="172" r="10" fill="#ffcf3d" stroke="#e0a000" stroke-width="2"/>';
+  if(A) s+='<rect x="64" y="124" width="12" height="104" rx="5" fill="#2b76e8"/><rect x="124" y="124" width="12" height="104" rx="5" fill="#2b76e8"/><rect x="63" y="190" width="14" height="9" rx="2" fill="#ffcf3d"/><rect x="123" y="190" width="14" height="9" rx="2" fill="#ffcf3d"/>';
+  /* left arm */
+  s+='<g class="arm arm-l" style="transform-origin:50px 138px;'+(A?'':'transform:rotate(-18deg)')+'"><rect x="38" y="128" width="24" height="88" rx="12" fill="#fff" stroke="#c5d3de" stroke-width="2"/><circle cx="50" cy="220" r="12.5" fill="'+skin+'"/></g>';
+  if(!A) s+='<g><rect x="60" y="172" width="58" height="70" rx="5" fill="#2e9e5b" stroke="#1d7a43" stroke-width="3"/><rect x="60" y="172" width="9" height="70" rx="3" fill="#1d7a43"/><rect x="74" y="184" width="36" height="6" rx="3" fill="#ffe79a"/><rect x="74" y="196" width="26" height="6" rx="3" fill="#ffe79a"/><rect x="112" y="176" width="6" height="62" fill="#f4f8f0"/><circle cx="66" cy="236" r="12" fill="'+skin+'"/></g>';
+  /* right arm */
+  s+='<g class="arm arm-r"><rect x="138" y="128" width="24" height="88" rx="12" fill="#fff" stroke="#c5d3de" stroke-width="2"/><circle cx="150" cy="220" r="12.5" fill="'+skin+'"/></g>';
+  /* head */
+  s+='<circle cx="58" cy="76" r="8" fill="'+skin+'"/><circle cx="142" cy="76" r="8" fill="'+skin+'"/>'
+   +'<circle cx="100" cy="70" r="43" fill="'+skin+'"/>'
+   +(A?'<path d="M56 70 C52 30 80 21 100 21 C124 21 149 32 144 70 C137 52 124 45 100 45 C76 45 63 52 56 70Z" fill="'+hair+'"/>'
+      :'<path d="M55 72 C48 28 84 17 106 21 C134 25 152 42 145 72 C141 56 130 46 110 44 C90 44 70 50 55 72Z" fill="'+hair+'"/><path d="M104 22 q10 -12 24 -4 q-12 2 -16 10z" fill="'+hair+'"/>')
+   +'<g class="eyes"><ellipse cx="84" cy="72" rx="5.2" ry="7" fill="#1b1b24"/><ellipse cx="116" cy="72" rx="5.2" ry="7" fill="#1b1b24"/><circle cx="85.8" cy="69.5" r="1.9" fill="#fff"/><circle cx="117.8" cy="69.5" r="1.9" fill="#fff"/></g>'
+   +'<path d="M75 58 Q84 52 93 57 M107 57 Q116 52 125 58" stroke="'+hair+'" stroke-width="3.4" fill="none" stroke-linecap="round"/>'
+   +'<circle cx="73" cy="88" r="7" fill="#ff9d8a" opacity=".35"/><circle cx="127" cy="88" r="7" fill="#ff9d8a" opacity=".35"/>'
+   +'<path d="M100 77 q-4 8 1 9" stroke="#b9805a" fill="none" stroke-width="2" stroke-linecap="round"/>'
+   +'<path d="M87 94 Q100 106 113 94" stroke="#7a2b2b" stroke-width="3" fill="none" stroke-linecap="round"/>'
+   +'<g class="m-o"><ellipse cx="100" cy="99" rx="11" ry="8.5" fill="#7a2b2b"/><ellipse cx="100" cy="105" rx="6.5" ry="3" fill="#e57a7a"/></g>'
+   +'</svg><span class="plate">'+(A?'أحمد':'سالم')+'</span>';
+  return s;
+}
+function bgSVG(kind){
+  var s='<svg class="bg bg-'+kind+'" viewBox="0 0 1280 720" aria-hidden="true">';
+  if(kind==='class'){
+    s+='<defs><linearGradient id="gw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fe0dc"/><stop offset="1" stop-color="#d8f6f3"/></linearGradient></defs>'
+     +'<rect width="1280" height="720" fill="url(#gw)"/><rect y="560" width="1280" height="48" fill="#58c7c4"/>'
+     +'<rect y="608" width="1280" height="112" fill="#f3cf57"/>';
+    for(var i=0;i<9;i++) s+='<rect x="0" y="'+(608+i*14)+'" width="1280" height="2" fill="#dfb538"/>';
+    for(var j=0;j<13;j++) s+='<rect x="'+(j*104+((j%2)*30))+'" y="608" width="2" height="112" fill="#dfb538" opacity=".5"/>';
+    s+='<rect x="14" y="96" width="112" height="190" rx="10" fill="#ffcf3d"/><rect x="24" y="106" width="92" height="170" rx="6" fill="#7fd0ff"/><circle cx="84" cy="150" r="22" fill="#ffe36b"/><path d="M24 200 Q54 180 78 200 T116 196 V276 H24Z" fill="#a9e6c2"/><rect x="68" y="106" width="4" height="170" fill="#ffcf3d"/><rect x="24" y="186" width="92" height="4" fill="#ffcf3d"/>'
+     +'<circle cx="1210" cy="130" r="46" fill="#fff" stroke="#ffcf3d" stroke-width="10"/><path d="M1210 130 V102 M1210 130 L1230 142" stroke="#0e2f57" stroke-width="5" stroke-linecap="round"/><circle cx="1210" cy="130" r="4" fill="#0e2f57"/>'
+     +'<rect x="1160" y="330" width="100" height="10" rx="4" fill="#c48e1e"/><path d="M1190 330 q-14 -30 4 -44 q8 18 8 44z M1214 330 q4 -40 24 -50 q4 28 -14 50z" fill="#35b36a"/><rect x="1188" y="316" width="52" height="16" rx="3" fill="#ee7d11"/>';
+  } else {
+    s+='<defs><linearGradient id="gl2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b8fa6"/><stop offset="1" stop-color="#34b9b1"/></linearGradient></defs>'
+     +'<rect width="1280" height="720" fill="url(#gl2)"/>';
+    var cols=['#1b6be0','#ffcf3d','#ee7d11','#fafdff','#0e2f57','#11b5ad','#ffe79a'];
+    var seed=7; function rnd(){seed=(seed*9301+49297)%233280;return seed/233280;}
+    [130,280,430,580].forEach(function(base){
+      var x=6;
+      while(x<1280){var w=18+Math.floor(rnd()*18),h=62+Math.floor(rnd()*40);
+        s+='<rect x="'+x+'" y="'+(base-h)+'" width="'+w+'" height="'+h+'" rx="3" fill="'+cols[Math.floor(rnd()*cols.length)]+'"/>';
+        x+=w+2+Math.floor(rnd()*3);}
+      s+='<rect x="0" y="'+base+'" width="1280" height="14" fill="#c48e1e"/>';
+    });
+    s+='<rect y="640" width="1280" height="80" fill="#2f6fb5"/><rect y="640" width="1280" height="8" fill="#1f5a99"/>';
+  }
+  return s+'</svg>';
+}
+var cv=document.getElementById('cv');
+document.getElementById('bgs').innerHTML=bgSVG('class')+bgSVG('lib');
+var elA=document.getElementById('ahmed'), elS=document.getElementById('salem');
+elA.innerHTML=charSVG('ahmed'); elS.innerHTML=charSVG('salem');
+
+/* ---------- script (steps) ---------- */
+var STEPS=[];
+function L(scene,spk,text,fx,o){STEPS.push(Object.assign({scene:scene,spk:spk,text:text,fx:fx||''},o||{}));}
+function P(scene,dur,fx,o){STEPS.push(Object.assign({scene:scene,spk:null,text:null,dur:dur,fx:fx||''},o||{}));}
+var A='a',S='s';
+P(0,4.5,'');
+L(1,A,'يا سالم، لماذا نقول «يقرأُ» في الجملة الأولى، و«يقرأَ» في الثانية؟','show big');
+L(1,S,'السرّ في كلمة صغيرة غيّرت حركة الفعل.','');
+L(1,A,'تقصد كلمة «أن»؟','an');
+L(1,S,'نعم! هيا نكتشف كيف حدث ذلك.','');
+P(2,2.8,'book',{gest:A});
+L(2,S,'الفعل المضارع يدلّ على حدث يقع في الحاضر أو المستقبل.','def');
+L(2,A,'مثل «يقرأُ» و«يكتبُ» و«يتعلّمُ»؟','ex');
+L(2,S,'صحيح. ويكون مرفوعًا إذا لم تسبقه أداة نصب أو جزم.','cond');
+L(2,A,'إذن «يقرأُ» فعل مضارع مرفوع، وعلامة رفعه الضمّة الظاهرة.','card');
+L(2,S,'أحسنت؛ لأنّه صحيح الآخر.','why');
+L(3,A,'ماذا يحدث عندما تسبق «أن» الفعل المضارع؟','an');
+L(3,S,'يصبح منصوبًا؛ فنقول «أن يقرأَ».','nasb');
+L(3,A,'تغيّرت الضمّة إلى فتحة!','morph');
+L(3,S,'نعم. «أن» أداة نصب، و«يقرأَ» فعل مضارع منصوب، وعلامة نصبه الفتحة الظاهرة.','i3');
+L(4,A,'هل «أن» هي الأداة الوحيدة؟','cards');
+L(4,S,'لا. نتعلّم أيضًا «لن» و«كي» ولام التعليل.','lit');
+L(4,A,'سأجرّب: «لن أهملَ واجبي».','e2');
+L(4,S,'رائع! «لن» تفيد نفي حدوث الفعل في المستقبل.','n2');
+L(4,A,'و«أجتهدُ كي أنجحَ».','e3');
+L(4,S,'صحيح؛ و«كي» تدلّ على التعليل.','n3');
+L(4,A,'و«أقرأُ لأتعلّمَ».','e4');
+L(4,S,'جميل! اللام هنا لام التعليل، والفعل بعدها منصوب بأن مضمرة.','n4');
+L(5,A,'هل تظهر الفتحة على كل فعل مضارع منصوب؟','c');
+L(5,S,'ليست دائمًا. في «لن أكتبَ» تكون الفتحة ظاهرة.','n1');
+L(5,A,'وماذا عن «لن أسعى»؟','n2');
+L(5,S,'الفتحة مقدّرة على الألف، فلا تظهر.','m2');
+L(5,A,'و«الطالبان يكتبانِ»؟','r3');
+L(5,S,'«يكتبانِ» من الأفعال الخمسة، وهو مرفوع بثبوت النون.','r3n');
+L(5,S,'وبعد «لن» نقول «الطالبان لن يكتبا»؛ فعلامة نصبه حذف النون.','n3');
+L(6,A,'أدخل «لن» على: «أهملُ واجبي».','q1');
+P(6,3,'cd',{cd:1});
+L(6,S,'«لن أهملَ واجبي».','-cd ans');
+L(6,S,'اختر الفعل الصحيح: «أدرسُ كي…».','-q1 -ans q2');
+P(6,3,'cd',{cd:1});
+L(6,A,'«أدرسُ كي أنجحَ».','-cd ans');
+L(6,A,'أدخل «لن» على: «الطالبان يتأخّرانِ».','-q2 -ans q3');
+P(6,3,'cd',{cd:1});
+L(6,S,'«الطالبان لن يتأخّرا». علامة النصب حذف النون.','-cd ans');
+L(7,A,'فهمت الآن! المضارع مرفوع إذا لم تسبقه أداة نصب أو جزم.','root rafa');
+L(7,S,'وإذا سبقته أداة نصب أصبح منصوبًا، وعلامة نصبه تختلف بحسب نوعه.','nasb');
+L(7,A,'سأحرصُ على أن أستخدمَ الأفعال استخدامًا صحيحًا!','');
+L(7,S,'أحسنت! اللغة أجمل حين نفهم قواعدها.','');
+
+var DIAC=/[ً-ٰٟـ]/g;
+function speechText(s){return s.replace(/[«»]/g,' ').replace(/…/g,' ').replace(/\s+/g,' ').trim();}
+var T=0, FIRST={};
+STEPS.forEach(function(s,i){
+  if(s.dur==null){var n=s.text.replace(DIAC,'').replace(/[«»…\s.!؟،؛:]/g,'').length; s.dur=Math.max(2.8,1.8+0.09*n);}
+  s.start=T; T+=s.dur; s.end=T; if(!(s.scene in FIRST)) FIRST[s.scene]=i;
+});
+
+/* ---------- DOM refs ---------- */
+var $=function(id){return document.getElementById(id)};
+var frame=$('frame'), scenes=[].slice.call(cv.querySelectorAll('.scene')), bub=$('bub'), txt=$('txt'), who=$('who');
+var bPlay=$('bPlay'), lPlay=$('lPlay'), icoPlay=$('icoPlay'), bRe=$('bRe'), track=$('track'), fill=$('fill');
+var tNow=$('tNow'), tTot=$('tTot'), bVoice=$('bVoice'), lVoice=$('lVoice'), bFs=$('bFs'), player=$('player');
+var ov=$('ov'), ovh=$('ovh'), ovp=$('ovp'), ovb=$('ovb'), sr=$('sr'), vnote=$('voiceNote');
+var cdn=$('cdn'), cdp=$('cdp');
+var BG={0:'class',1:'class',2:'lib',3:'class',4:'class',5:'class',6:'class',7:'class'};
+
+function fmt(x){x=Math.max(0,Math.round(x));return Math.floor(x/60)+':'+('0'+(x%60)).slice(-2);}
+tTot.textContent=fmt(T);
+$('ovp').textContent='مدة العرض نحو '+fmt(T)+' دقيقة';
+/* scene ticks */
+Object.keys(FIRST).forEach(function(k){ if(+k===0) return;
+  var d=document.createElement('div'); d.className='tick'; d.style.right=(STEPS[FIRST[k]].start/T*100)+'%'; track.appendChild(d);
+});
+
+/* ---------- speech ---------- */
+var synth=window.speechSynthesis||null, voices=[], vA=null, vS=null, voiceAvail=false, voiceOn=true, speaking=false, curU=null, speakDeadline=0;
+function loadVoices(){
+  if(!synth) return;
+  voices=(synth.getVoices()||[]).filter(function(v){return /^ar/i.test(v.lang);});
+  voiceAvail=voices.length>0;
+  if(voiceAvail){vA=voices[0]; vS=voices[1]||voices[0];}
+  updateVoiceUI();
+}
+function updateVoiceUI(){
+  if(!voiceAvail){bVoice.disabled=true;lVoice.textContent='لا صوت عربي';
+    vnote.textContent='لم يجد هذا المتصفح صوتًا عربيًا، فالعرض يعتمد على النص والحركة بتوقيت مريح للقراءة. تشغيله في متصفح فيه صوت عربي يفعّل صوتين مختلفين.';}
+  else{bVoice.disabled=false;lVoice.textContent=voiceOn?'الصوت: يعمل':'الصوت: متوقف';bVoice.setAttribute('aria-pressed',voiceOn);
+    vnote.textContent=voices.length>1?'':'يوجد صوت عربي واحد في متصفحك، لذلك تختلف نبرة أحمد عن سالم بدرجة الصوت.';}
+}
+if(synth){loadVoices(); synth.onvoiceschanged=loadVoices;} else {updateVoiceUI();}
+function cancelSpeech(){speaking=false;curU=null;if(synth){try{synth.cancel();}catch(e){}}}
+function speak(step){
+  cancelSpeech();
+  if(!voiceOn||!voiceAvail||!step||!step.text) return;
+  var u=new SpeechSynthesisUtterance(speechText(step.text));
+  u.lang='ar-SA'; var A_=step.spk===A; u.voice=A_?vA:vS; u.rate=.86;
+  u.pitch=(vA===vS)?(A_?1.25:.75):1;
+  function done(){if(u===curU){speaking=false;}}
+  u.onend=done; u.onerror=done;
+  curU=u; speaking=true; speakDeadline=performance.now()+(step.dur+9)*1000;
+  try{synth.speak(u);}catch(e){speaking=false;}
+}
+bVoice.addEventListener('click',function(){voiceOn=!voiceOn; if(!voiceOn) cancelSpeech(); else if(playing) speak(STEPS[idx]); updateVoiceUI();});
+
+/* ---------- engine ---------- */
+var t=0, playing=false, idx=-1, lastTs=0, ended=false;
+function stepAt(x){var lo=0;for(var i=0;i<STEPS.length;i++){if(STEPS[i].start<=x)lo=i;else break;}return lo;}
+function flagsFor(i){
+  var sc=STEPS[i].scene, set={};
+  for(var k=FIRST[sc];k<=i;k++){(STEPS[k].fx||'').split(' ').forEach(function(f){if(!f)return; if(f[0]==='-')delete set[f.slice(1)]; else set[f]=1;});}
+  return Object.keys(set);
+}
+function onStep(i){
+  var s=STEPS[i];
+  cv.dataset.scene=s.scene; cv.dataset.bg=BG[s.scene];
+  var fl=flagsFor(i);
+  scenes.forEach(function(el){
+    var on=(+el.dataset.s===s.scene);
+    el.classList.toggle('on',on);
+    if(on){
+      [].slice.call(el.classList).forEach(function(c){if(c.indexOf('f-')===0)el.classList.remove(c);});
+      fl.forEach(function(f){el.classList.add('f-'+f);});
+    }
+  });
+  if(s.text){
+    who.textContent=s.spk===A?'أحمد':'سالم';
+    bub.className='bub '+(s.spk===A?'by-a':'by-s');
+    txt.textContent=s.text; txt.className='txt'+(s.text.length>70?' sm':'');
+    sr.textContent=who.textContent+': '+s.text;
+  } else {bub.classList.add('off');}
+  elA.classList.toggle('active',s.spk===A); elS.classList.toggle('active',s.spk===S);
+  if(playing) speak(s);
+}
+function render(){
+  var i=stepAt(t);
+  if(i!==idx){idx=i;onStep(i);}
+  var s=STEPS[idx];
+  var talkingNow=false;
+  if(playing&&s.text){talkingNow=(voiceOn&&voiceAvail)?speaking:(t<s.start+s.dur*0.88);}
+  elA.classList.toggle('talk',talkingNow&&s.spk===A); elS.classList.toggle('talk',talkingNow&&s.spk===S);
+  elA.classList.toggle('gesture',!!(s.gest===A)); elS.classList.toggle('gesture',!!(s.gest===S));
+  if(s.cd){var rem=Math.max(0,s.end-t); cdn.textContent=Math.max(1,Math.ceil(rem-0.001)); cdp.style.strokeDashoffset=(276.5*(1-rem/s.dur)).toFixed(1);}
+  var f=Math.min(1,t/T); fill.style.width=(f*100)+'%'; tNow.textContent=fmt(t);
+  track.setAttribute('aria-valuenow',Math.round(f*100));
+}
+function frameLoop(ts){
+  if(playing){
+    var dt=Math.min(.1,Math.max(0,(ts-lastTs)/1000)); t+=dt;
+    var s=STEPS[idx];
+    if(s&&speaking&&voiceOn&&t>s.end-0.02){
+      if(performance.now()>speakDeadline){speaking=false;} else {t=s.end-0.02;}
+    }
+    if(t>=T){t=T;playing=false;ended=true;cancelSpeech();showOverlay();}
+  }
+  lastTs=ts; render(); requestAnimationFrame(frameLoop);
+}
+function setPlayUI(){
+  lPlay.textContent=playing?'إيقاف':(ended?'إعادة':'تشغيل');
+  icoPlay.setAttribute('d',playing?'M6 4h4v16H6zm8 0h4v16h-4z':'M7 4l13 8-13 8z');
+}
+function showOverlay(){
+  setPlayUI();
+  if(ended){ovh.textContent='أحسنت! انتهى الدرس';ovp.textContent='الضمّة للرفع، والفتحة للنصب، وللأفعال الخمسة حكم خاص.';ovb.textContent='إعادة المشاهدة';ov.hidden=false;}
+  else if(t<0.05){ovh.textContent='من الضمّة إلى الفتحة';ovp.textContent='مدة العرض نحو '+fmt(T)+' دقيقة';ovb.textContent='تشغيل';ov.hidden=false;}
+  else ov.hidden=true;
+}
+function play(){
+  if(ended||t>=T-0.05){resetQuiz();t=0;idx=-1;ended=false;}
+  playing=true;ov.hidden=true;setPlayUI();render(); speak(STEPS[idx<0?0:idx]);
+}
+function pause(){playing=false;cancelSpeech();setPlayUI();}
+function toggle(){playing?pause():play();}
+function restart(){cancelSpeech();resetQuiz();t=0;idx=-1;ended=false;playing=true;ov.hidden=true;setPlayUI();render();speak(STEPS[idx]);}
+function seek(x){
+  t=Math.max(0,Math.min(T-0.01,x)); ended=false; idx=-1; cancelSpeech(); render();
+  ov.hidden=true; if(playing) speak(STEPS[idx]); else setPlayUI();
+}
+function resetQuiz(){[].slice.call(cv.querySelectorAll('.qp,.opt')).forEach(function(e){e.classList.remove('got','miss','bad');});}
+bPlay.addEventListener('click',toggle);
+bRe.addEventListener('click',restart);
+ovb.addEventListener('click',function(e){e.stopPropagation();ended?restart():play();});
+frame.addEventListener('click',function(e){
+  if(e.target.closest('.opt')||e.target.closest('.ov')) return; toggle();
+});
+track.addEventListener('click',function(e){
+  var r=track.getBoundingClientRect(); seek((r.right-e.clientX)/r.width*T);
+});
+track.addEventListener('keydown',function(e){
+  if(e.key==='ArrowLeft'){seek(t+5);e.preventDefault();}
+  else if(e.key==='ArrowRight'){seek(t-5);e.preventDefault();}
+});
+document.addEventListener('keydown',function(e){
+  if(e.code==='Space'&&!/^(BUTTON|INPUT|A)$/.test((e.target.tagName||''))&&e.target!==track){e.preventDefault();toggle();}
+});
+/* quiz clicks */
+cv.addEventListener('click',function(e){
+  var o=e.target.closest('.opt'); if(!o) return; e.stopPropagation();
+  var qp=o.closest('.qp'); var sc=cv.querySelector('.scene[data-s="6"]');
+  if(sc.classList.contains('f-ans')||qp.classList.contains('got')) return;
+  if(o.dataset.ok==='1'){qp.classList.remove('miss');qp.classList.add('got');}
+  else{qp.classList.add('miss');o.classList.add('bad');}
+});
+/* fullscreen */
+bFs.addEventListener('click',function(){
+  try{
+    if(document.fullscreenElement){document.exitFullscreen();}
+    else if(player.requestFullscreen){var p=player.requestFullscreen(); if(p&&p.catch)p.catch(function(){});}
+  }catch(err){}
+});
+if(!player.requestFullscreen){bFs.disabled=true;}
+document.addEventListener('fullscreenchange',function(){bFs.lastChild.textContent=document.fullscreenElement?'خروج من ملء الشاشة':'ملء الشاشة';fit();});
+/* scale canvas */
+function fit(){var w=frame.clientWidth; cv.style.transform='scale('+(w/1280)+')';}
+if(window.ResizeObserver){new ResizeObserver(fit).observe(frame);} window.addEventListener('resize',fit); fit();
+
+render(); showOverlay(); setPlayUI();
+requestAnimationFrame(frameLoop);
+})();
+</script>
